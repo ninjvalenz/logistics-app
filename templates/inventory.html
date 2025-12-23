@@ -12,8 +12,12 @@
     <div class="card">
         <div class="card-header">
             <h2 class="card-title">Inventory List</h2>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
                 <span style="color: var(--text-muted); font-size: 0.9rem;" id="itemCount"></span>
+                
+                <button class="btn" style="padding: 0.75rem 1.5rem;" onclick="addNewItem()">
+                    + Add Item
+                </button>
             </div>
         </div>
         
@@ -36,6 +40,7 @@
                         <th>Location</th>
                         <th>Category</th>
                         <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="inventoryTable"></tbody>
@@ -43,6 +48,60 @@
         </div>
     </div>
 </div>
+
+<div id="addItemModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Add New Item</h2>
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+        </div>
+        <form class="add-item-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="productName">Product Name</label>
+                    <input type="text" id="productName" class="form-input" value="Gaming Headset">
+                </div>
+                <div class="form-group">
+                    <label for="sku">SKU</label>
+                    <input type="text" id="sku" class="form-input" value="ELEC-156" readonly>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" class="form-input">
+                        <option>Electronics</option>
+                        <option>Furniture</option>
+                        <option>Office Supplies</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Quantity</label>
+                    <input type="number" id="quantity" class="form-input" value="50">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="warehouse">Warehouse Location</label>
+                    <select id="warehouse" class="form-input">
+                        <option>Warehouse A - Section 2</option>
+                        <option>Warehouse B - Section 5</option>
+                        <option>Warehouse C - Section 3</option>
+                    </select>
+                </div>
+                
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="button" class="btn" onclick="closeModal()">Add Item</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -97,7 +156,7 @@
         if (filteredInventory.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
                         No items found matching your search
                     </td>
                 </tr>
@@ -121,6 +180,24 @@
                         ${item.status === 'high' ? '✓ In Stock' : item.status === 'medium' ? '○ Moderate' : '⚠ Low Stock'}
                     </span>
                 </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-edit" onclick="editItem(${item.id})" title="Edit">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button class="btn-delete" onclick="deleteItem(${item.id})" title="Delete">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
             </tr>
         `).join('');
     }
@@ -143,6 +220,29 @@
 
         renderInventoryTable();
         updateItemCount();
+    }
+
+    function addNewItem() {
+        document.getElementById('addItemModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('addItemModal').style.display = 'none';
+    }
+
+    function editItem(id) {
+        console.log('Edit item:', id);
+    }
+
+    function deleteItem(id) {
+        console.log('Delete item:', id);
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('addItemModal');
+        if (event.target === modal) {
+            closeModal();
+        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
