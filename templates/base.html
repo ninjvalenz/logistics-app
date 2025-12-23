@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Logistics App{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">Logistics App</div>
+                <nav class="nav-tabs">
+                    <a href="{{ url_for('tracking') }}" class="nav-tab {% if request.endpoint == 'tracking' %}active{% endif %}">
+                        📦 Tracking
+                    </a>
+                    <a href="{{ url_for('shipments') }}" class="nav-tab {% if request.endpoint == 'shipments' %}active{% endif %}">
+                        🚚 Shipments
+                    </a>
+                    <a href="{{ url_for('inventory') }}" class="nav-tab {% if request.endpoint == 'inventory' %}active{% endif %}">
+                        📊 Inventory
+                    </a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

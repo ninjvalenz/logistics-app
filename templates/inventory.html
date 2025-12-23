@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory - LogisticsApp{% endblock %}
+
+{% block content %}
+<div>
+    <h1 class="page-title">📊 Warehouse Inventory</h1>
+    <p class="page-subtitle">Monitor your stock levels and warehouse operations</p>
+
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Inventory List</h2>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="color: var(--text-muted); font-size: 0.9rem;" id="itemCount"></span>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <input 
+                type="text" 
+                class="search-input" 
+                id="searchInput"
+                placeholder="Search by product name, SKU, location, or category..."
+            />
+        </div>
+
+        <div class="table-container">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th>Quantity</th>
+                        <th>Location</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTable"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allInventory = [];
+    let filteredInventory = [];
+
+    function loadInventory() {
+        fetch('/api/inventory')
+            .then(response => response.json())
+            .then(data => {
+                allInventory = data;
+                filteredInventory = data;
+                updateStats();
+                renderInventoryTable();
+                updateItemCount();
+            });
+    }
+
+    function updateStats() {
+        const totalItems = allInventory.reduce((sum, item) => sum + item.quantity, 0);
+        const lowStock = allInventory.filter(item => item.status === 'low').length;
+        const categories = [...new Set(allInventory.map(item => item.category))].length;
+
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-value">${totalItems}</div>
+                <div class="stat-label">Total Items</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-value">${allInventory.length}</div>
+                <div class="stat-label">Product Types</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-value">${lowStock}</div>
+                <div class="stat-label">Low Stock Alerts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏷️</div>
+                <div class="stat-value">${categories}</div>
+                <div class="stat-label">Categories</div>
+            </div>
+        `;
+    }
+
+    function renderInventoryTable() {
+        const tbody = document.getElementById('inventoryTable');
+        
+        if (filteredInventory.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        No items found matching your search
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = filteredInventory.map(item => `
+            <tr>
+                <td>
+                    <div class="product-name">${item.name}</div>
+                </td>
+                <td>
+                    <div class="product-sku">${item.sku}</div>
+                </td>
+                <td style="font-weight: 600">${item.quantity}</td>
+                <td style="color: var(--text-muted)">${item.location}</td>
+                <td>${item.category}</td>
+                <td>
+                    <span class="stock-indicator ${item.status}">
+                        ${item.status === 'high' ? '✓ In Stock' : item.status === 'medium' ? '○ Moderate' : '⚠ Low Stock'}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updateItemCount() {
+        document.getElementById('itemCount').textContent = `Showing ${filteredInventory.length} items`;
+    }
+
+    function handleSearch(query) {
+        const lowerQuery = query.toLowerCase();
+        
+        filteredInventory = allInventory.filter(item => {
+            return (
+                item.name.toLowerCase().includes(lowerQuery) ||
+                item.sku.toLowerCase().includes(lowerQuery) ||
+                item.location.toLowerCase().includes(lowerQuery) ||
+                item.category.toLowerCase().includes(lowerQuery)
+            );
+        });
+
+        renderInventoryTable();
+        updateItemCount();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadInventory();
+
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            handleSearch(e.target.value);
+        });
+    });
+</script>
+{% endblock %}

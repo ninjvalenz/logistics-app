@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Shipments - LogisticsApp{% endblock %}
+
+{% block content %}
+<div>
+    <h1 class="page-title">🚚 All Shipments</h1>
+    <p class="page-subtitle">View and manage all packages in the system</p>
+
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="filter-tabs" id="filterTabs"></div>
+
+    <div class="shipments-grid" id="shipmentsGrid"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allShipments = [];
+    let currentFilter = 'all';
+
+    function loadShipments() {
+        fetch('/api/shipments')
+            .then(response => response.json())
+            .then(data => {
+                allShipments = data;
+               
+                renderFilterTabs();
+                renderShipments();
+            });
+    }
+
+    function updateStats() {
+        const inTransit = allShipments.filter(s => s.status === 'in-transit').length;
+        const pending = allShipments.filter(s => s.status === 'pending').length;
+        const delivered = allShipments.filter(s => s.status === 'delivered').length;
+
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-value">${allShipments.length}</div>
+                <div class="stat-label">Total Shipments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🚛</div>
+                <div class="stat-value">${inTransit}</div>
+                <div class="stat-label">In Transit</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-value">${pending}</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value">${delivered}</div>
+                <div class="stat-label">Delivered Today</div>
+            </div>
+        `;
+    }
+
+    function renderFilterTabs() {
+        const inTransit = allShipments.filter(s => s.status === 'in-transit').length;
+        const pending = allShipments.filter(s => s.status === 'pending').length;
+        const delivered = allShipments.filter(s => s.status === 'delivered').length;
+
+        document.getElementById('filterTabs').innerHTML = `
+            <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">
+                All Shipments (${allShipments.length})
+            </button>
+            <button class="filter-btn ${currentFilter === 'in-transit' ? 'active' : ''}" onclick="setFilter('in-transit')">
+                In Transit (${inTransit})
+            </button>
+            <button class="filter-btn ${currentFilter === 'pending' ? 'active' : ''}" onclick="setFilter('pending')">
+                Pending (${pending})
+            </button>
+            <button class="filter-btn ${currentFilter === 'delivered' ? 'active' : ''}" onclick="setFilter('delivered')">
+                Delivered (${delivered})
+            </button>
+        `;
+    }
+
+    function setFilter(filter) {
+        currentFilter = filter;
+        renderFilterTabs();
+        renderShipments();
+    }
+
+    function renderShipments() {
+        const filtered = currentFilter === 'all' 
+            ? allShipments 
+            : allShipments.filter(s => s.status === currentFilter);
+
+        document.getElementById('shipmentsGrid').innerHTML = filtered.map((shipment, index) => `
+            <div class="shipment-card" style="animation-delay: ${index * 0.05}s; cursor: pointer;" onclick="goToTracking('${shipment.trackingNumber}')">
+                <div class="shipment-header">
+                    <div class="shipment-tracking">${shipment.trackingNumber}</div>
+                    <span class="priority-badge ${shipment.priority.toLowerCase()}">
+                        ${shipment.priority}
+                    </span>
+                </div>
+
+                <div class="shipment-recipient">
+                    👤 ${shipment.recipient}
+                </div>
+
+                <div class="shipment-route">
+                    <div class="route-location">
+                        <div class="route-label">From</div>
+                        <div class="route-name">${shipment.origin}</div>
+                    </div>
+                    <div class="route-arrow">→</div>
+                    <div class="route-location">
+                        <div class="route-label">To</div>
+                        <div class="route-name">${shipment.destination}</div>
+                    </div>
+                </div>
+
+                <div class="shipment-status">
+                    <div class="status-text">
+                        ${shipment.status === 'in-transit' ? '🚛' : shipment.status === 'pending' ? '⏳' : '✅'} 
+                        ${shipment.currentStatus}
+                    </div>
+                </div>
+
+                <div class="shipment-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Weight</div>
+                        <div class="detail-value">${shipment.weight}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ETA</div>
+                        <div class="detail-value">
+                            ${new Date(shipment.estimatedDelivery).toLocaleTimeString('en-US', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function goToTracking(trackingNumber) {
+        window.location.href = `/tracking?tracking=${trackingNumber}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadShipments();
+    });
+</script>
+{% endblock %}
